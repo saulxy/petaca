@@ -1,0 +1,98 @@
+/* Ionic v8 Theme Variables for Petaca eBay Inventory Manager */
+
+:root {
+  /* Font Family */
+  --ion-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ion-heading-font-family: 'Plus Jakarta Sans', var(--ion-font-family);
+
+  /* Primary Color System (Modern Deep Indigo / Cyan Gradient Accent) */
+  --ion-color-primary: #3b82f6;
+  --ion-color-primary-rgb: 59, 130, 246;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #2563eb;
+  --ion-color-primary-tint: #60a5fa;
+
+  /* Secondary Accent (eBay Vibrant Gold / Amber) */
+  --ion-color-secondary: #f59e0b;
+  --ion-color-secondary-rgb: 245, 158, 11;
+  --ion-color-secondary-contrast: #000000;
+  --ion-color-secondary-contrast-rgb: 0, 0, 0;
+  --ion-color-secondary-shade: #d97706;
+  --ion-color-secondary-tint: #fbbf24;
+
+  /* Success Color (Profit / Listed) */
+  --ion-color-success: #10b981;
+  --ion-color-success-rgb: 16, 185, 129;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #059669;
+  --ion-color-success-tint: #34d399;
+
+  /* Warning Color (Low stock / Draft) */
+  --ion-color-warning: #f97316;
+  --ion-color-warning-rgb: 249, 115, 22;
+  --ion-color-warning-contrast: #ffffff;
+  --ion-color-warning-contrast-rgb: 255, 255, 255;
+  --ion-color-warning-shade: #ea580c;
+  --ion-color-warning-tint: #fb923c;
+
+  /* Danger Color (Out of stock / Loss) */
+  --ion-color-danger: #ef4444;
+  --ion-color-danger-rgb: 239, 68, 68;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #dc2626;
+  --ion-color-danger-tint: #f87171;
+
+  /* Dark Theme Default */
+  --ion-background-color: #0d1117;
+  --ion-background-color-rgb: 13, 17, 23;
+
+  --ion-text-color: #f0f6fc;
+  --ion-text-color-rgb: 240, 246, 252;
+
+  --ion-item-background: #161b22;
+  --ion-card-background: #161b22;
+
+  --ion-border-color: #30363d;
+  --ion-toolbar-background: #161b22;
+  --ion-toolbar-border-color: #30363d;
+  --ion-tab-bar-background: #161b22;
+  --ion-tab-bar-border-color: #30363d;
+
+  /* Custom App Palette */
+  --app-card-bg: #161b22;
+  --app-card-border: #30363d;
+  --app-card-hover-border: #58a6ff;
+  --app-subtext: #8b949e;
+  --app-accent-glow: rgba(59, 130, 246, 0.15);
+  --app-ebay-blue: #0064d2;
+  --app-ebay-yellow: #f5af00;
+  --app-ebay-red: #e53238;
+  --app-ebay-green: #86b817;
+}
+
+/* Light Theme Overrides */
+body.light-theme {
+  --ion-background-color: #f6f8fa;
+  --ion-background-color-rgb: 246, 248, 250;
+
+  --ion-text-color: #1f2328;
+  --ion-text-color-rgb: 31, 35, 40;
+
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+
+  --ion-border-color: #d0d7de;
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-border-color: #d0d7de;
+  --ion-tab-bar-background: #ffffff;
+  --ion-tab-bar-border-color: #d0d7de;
+
+  --app-card-bg: #ffffff;
+  --app-card-border: #d0d7de;
+  --app-card-hover-border: #0969da;
+  --app-subtext: #6e7781;
+  --app-accent-glow: rgba(9, 105, 218, 0.08);
+}
