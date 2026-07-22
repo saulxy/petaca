@@ -33,6 +33,8 @@ import { ItemModal } from '../components/ItemModal';
 import { ItemDetailModal } from '../components/ItemDetailModal';
 import { InventoryItem } from '../types/inventory';
 
+import { STORE_CONFIG } from '../constants';
+
 export const DashboardTab: React.FC = () => {
   const { stats, items, sales, isDarkMode, toggleDarkMode } = useInventory();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -46,8 +48,8 @@ export const DashboardTab: React.FC = () => {
         <IonToolbar color="dark">
           <IonTitle>
             <div className="brand-header">
-              <span>📦 Petaca</span>
-              <span className="brand-badge">eBay Manager v8</span>
+              <span>📦 {STORE_CONFIG.appName}</span>
+              <span className="brand-badge">Version {STORE_CONFIG.version}</span>
             </div>
           </IonTitle>
 
@@ -83,11 +85,8 @@ export const DashboardTab: React.FC = () => {
                 boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.4)'
               }}>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, fontFamily: 'var(--ion-heading-font-family)' }}>
-                  eBay Store Inventory Hub 🚀
+                  {STORE_CONFIG.storeName} - {STORE_CONFIG.storeTagline} 🚀
                 </h1>
-                <p style={{ color: '#94a3b8', margin: '6px 0 0 0', fontSize: '0.95rem' }}>
-                  Track your stock, calculate net profit margins, and streamline storage bin locations.
-                </p>
               </div>
             </IonCol>
           </IonRow>
