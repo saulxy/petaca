@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonModal,
   IonHeader,
@@ -19,7 +19,7 @@ import {
   IonIcon,
   IonNote
 } from '@ionic/react';
-import { closeOutline, saveOutline, calculatorOutline, imageOutline } from 'ionicons/icons';
+import { closeOutline, saveOutline, calculatorOutline, imageOutline, cameraOutline, addOutline, trashOutline } from 'ionicons/icons';
 import { InventoryItem, ItemCategory, ItemCondition, ListingStatus } from '../types/inventory';
 import { useInventory } from '../context/InventoryContext';
 
@@ -54,6 +54,8 @@ const statuses: ListingStatus[] = ['Active', 'Draft', 'Sold', 'Shipped', 'Archiv
 export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdit }) => {
   const { addItem, updateItem, bins } = useInventory();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [title, setTitle] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState<ItemCategory>('Electronics');
@@ -63,10 +65,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
   const [quantity, setQuantity] = useState<number>(1);
   const [locationBin, setLocationBin] = useState<string>('Bin A1');
   const [status, setStatus] = useState<ListingStatus>('Active');
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [images, setImages] = useState<string[]>([]);
+  const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
+  const [customUrl, setCustomUrl] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [ebayListingId, setEbayListingId] = useState<string>('');
   const [weightOz, setWeightOz] = useState<number>(16);
+
+  const MAX_IMAGES = 5;
 
   useEffect(() => {
     if (itemToEdit) {
@@ -79,7 +85,10 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       setQuantity(itemToEdit.quantity);
       setLocationBin(itemToEdit.locationBin);
       setStatus(itemToEdit.status);
-      setImageUrl(itemToEdit.imageUrl || '');
+      const existingImages = itemToEdit.images && itemToEdit.images.length > 0
+        ? itemToEdit.images
+        : (itemToEdit.imageUrl ? [itemToEdit.imageUrl] : []);
+      setImages(existingImages);
       setNotes(itemToEdit.notes || '');
       setEbayListingId(itemToEdit.ebayListingId || '');
       setWeightOz(itemToEdit.weightOz || 16);
@@ -94,11 +103,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       setQuantity(1);
       setLocationBin(bins.length > 0 ? bins[0].name : 'Bin A1');
       setStatus('Active');
-      setImageUrl('https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80');
+      const defaultImg = 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
+      setImages([defaultImg]);
       setNotes('');
       setEbayListingId('');
       setWeightOz(16);
     }
+    setShowUrlInput(false);
+    setCustomUrl('');
   }, [itemToEdit, isOpen, bins]);
 
   // Live calculations
@@ -106,9 +118,62 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
   const estimatedNet = listPrice - purchaseCost - estimatedFee;
   const marginPct = listPrice > 0 ? ((estimatedNet / listPrice) * 100).toFixed(1) : '0';
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = MAX_IMAGES - images.length;
+    if (remainingSlots <= 0) return;
+
+    const selectedFiles = Array.from(files).slice(0, remainingSlots);
+    const filePromises = selectedFiles.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(filePromises).then(newImages => {
+      setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES));
+    });
+
+    if (e.target) e.target.value = '';
+  };
+
+  const handleRemoveImage = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSelectPrimaryImage = (index: number) => {
+    if (index === 0) return;
+    setImages(prev => {
+      const next = [...prev];
+      const [selected] = next.splice(index, 1);
+      return [selected, ...next];
+    });
+  };
+
+  const handleAddUrlImage = () => {
+    if (!customUrl.trim()) return;
+    if (images.length >= MAX_IMAGES) return;
+    setImages(prev => [...prev, customUrl.trim()].slice(0, MAX_IMAGES));
+    setCustomUrl('');
+    setShowUrlInput(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+
+    const primaryImg = images.length > 0
+      ? images[0]
+      : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
 
     const payload = {
       title: title.trim(),
@@ -120,7 +185,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       quantity: Number(quantity) || 1,
       locationBin,
       status,
-      imageUrl: imageUrl.trim() || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80',
+      imageUrl: primaryImg,
+      images: images.length > 0 ? images : [primaryImg],
       notes: notes.trim(),
       ebayListingId: ebayListingId.trim(),
       ebayUrl: ebayListingId ? `https://www.ebay.com/itm/${ebayListingId}` : undefined,
@@ -154,41 +220,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       <IonContent className="ion-padding">
         <form onSubmit={handleSubmit}>
           <IonGrid>
-            {/* Real-time Profit Preview Box */}
-            <IonRow className="ion-margin-bottom">
-              <IonCol size="12">
-                <div style={{
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15))',
-                  border: '1px solid rgba(59, 130, 246, 0.3)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '12px'
-                }}>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--app-subtext)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={calculatorOutline} /> Estimated Net Profit (after ~13.25% eBay fee)
-                    </div>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: estimatedNet >= 0 ? '#10b981' : '#ef4444' }}>
-                      ${estimatedNet.toFixed(2)}
-                    </div>
-                  </div>
-
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="profit-pill">
-                      {marginPct}% Est. Margin
-                    </span>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--app-subtext)', marginTop: '4px' }}>
-                      Fee: ~${estimatedFee.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-
             {/* Title */}
             <IonRow>
               <IonCol size="12">
@@ -321,20 +352,116 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
               </IonCol>
             </IonRow>
 
-            {/* Image URL & eBay Listing ID */}
+            {/* Camera Capture & Image Gallery Section */}
             <IonRow>
-              <IonCol size="6">
-                <IonItem>
-                  <IonLabel position="stacked">Image URL</IonLabel>
-                  <IonInput
-                    value={imageUrl}
-                    onIonInput={e => setImageUrl(e.detail.value || '')}
-                    placeholder="https://images.unsplash..."
-                  />
-                </IonItem>
-              </IonCol>
+              <IonCol size="12">
+                <div className="photo-picker-container">
+                  <div className="photo-picker-header">
+                    <div className="photo-picker-title">
+                      <IonIcon icon={cameraOutline} style={{ fontSize: '1.2rem', color: '#3b82f6' }} />
+                      <span>Item Photos / Camera Capture</span>
+                    </div>
+                    <div className={`photo-count-badge ${images.length >= MAX_IMAGES ? 'maxed' : ''}`}>
+                      {images.length} / {MAX_IMAGES} photos
+                    </div>
+                  </div>
 
-              <IonCol size="6">
+                  {/* Hidden File Input with Camera Capture Support */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+
+                  <div className="photo-tiles-grid">
+                    {/* Render Miniature Thumbnail Tiles */}
+                    {images.map((imgUrl, index) => (
+                      <div
+                        key={`${imgUrl.slice(0, 30)}-${index}`}
+                        className={`photo-tile photo-tile-thumb ${index === 0 ? 'primary' : ''}`}
+                        onClick={() => handleSelectPrimaryImage(index)}
+                        title={index === 0 ? 'Main listing photo' : 'Click to make main photo'}
+                      >
+                        <img src={imgUrl} alt={`Captured item photo ${index + 1}`} />
+                        {index === 0 && <span className="photo-tile-badge-main">Main</span>}
+                        <button
+                          type="button"
+                          className="photo-tile-delete"
+                          onClick={(e) => handleRemoveImage(index, e)}
+                          title="Remove photo"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Action Button Tile to Add / Capture Photos */}
+                    {images.length < MAX_IMAGES && (
+                      <div
+                        className="photo-tile photo-tile-add"
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Take photo with camera or upload image"
+                      >
+                        <span className="plus-icon">+</span>
+                        <span className="add-text">Capture</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Secondary Options */}
+                  <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowUrlInput(!showUrlInput)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--app-subtext)',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        padding: 0,
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      {showUrlInput ? 'Hide URL input' : '+ Add via image URL'}
+                    </button>
+
+                    {images.length >= MAX_IMAGES && (
+                      <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600 }}>
+                        Maximum 5 images limit reached
+                      </span>
+                    )}
+                  </div>
+
+                  {showUrlInput && images.length < MAX_IMAGES && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <IonInput
+                        value={customUrl}
+                        onIonInput={e => setCustomUrl(e.detail.value || '')}
+                        placeholder="Paste image URL..."
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '8px',
+                          paddingLeft: '10px',
+                          fontSize: '0.85rem'
+                        }}
+                      />
+                      <IonButton size="small" onClick={handleAddUrlImage}>
+                        Add
+                      </IonButton>
+                    </div>
+                  )}
+                </div>
+              </IonCol>
+            </IonRow>
+
+            {/* eBay Listing ID */}
+            <IonRow>
+              <IonCol size="12">
                 <IonItem>
                   <IonLabel position="stacked">eBay Item ID (Optional)</IonLabel>
                   <IonInput
@@ -381,3 +508,4 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
     </IonModal>
   );
 };
+

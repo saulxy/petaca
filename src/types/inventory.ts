@@ -32,6 +32,7 @@ export interface InventoryItem {
   locationBin: string;  // e.g. "Bin A1", "Shelf B3"
   status: ListingStatus;
   imageUrl: string;
+  images?: string[];
   notes?: string;
   ebayListingId?: string;
   ebayUrl?: string;

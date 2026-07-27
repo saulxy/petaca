@@ -45,8 +45,12 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, isOpen, 
   const [soldPriceInput, setSoldPriceInput] = useState<string>('');
   const [buyerInput, setBuyerInput] = useState<string>('');
   const [shippingInput, setShippingInput] = useState<string>('5.00');
+  const [activeImgIndex, setActiveImgIndex] = useState<number>(0);
 
   if (!item) return null;
+
+  const imagesList = item.images && item.images.length > 0 ? item.images : [item.imageUrl];
+  const activeImgUrl = imagesList[activeImgIndex] || item.imageUrl;
 
   const estimatedFee = (item.listPrice * 0.1325) + 0.30;
   const estimatedNet = item.listPrice - item.purchaseCost - estimatedFee;
@@ -85,7 +89,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, isOpen, 
             <IonRow className="ion-margin-bottom">
               <IonCol size="12" sizeMd="5">
                 <img
-                  src={item.imageUrl}
+                  src={activeImgUrl}
                   alt={item.title}
                   style={{
                     width: '100%',
@@ -95,6 +99,30 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, isOpen, 
                     border: '1px solid var(--app-card-border)'
                   }}
                 />
+
+                {/* Thumbnails row if multiple photos exist */}
+                {imagesList.length > 1 && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {imagesList.map((imgUrl, idx) => (
+                      <img
+                        key={`${imgUrl.slice(0, 20)}-${idx}`}
+                        src={imgUrl}
+                        alt={`Thumb ${idx + 1}`}
+                        onClick={() => setActiveImgIndex(idx)}
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          cursor: 'pointer',
+                          border: idx === activeImgIndex ? '2px solid #3b82f6' : '1px solid var(--app-card-border)',
+                          opacity: idx === activeImgIndex ? 1 : 0.6,
+                          transition: 'all 0.15s ease'
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
               </IonCol>
 
               <IonCol size="12" sizeMd="7" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
