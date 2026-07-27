@@ -27,6 +27,18 @@ ion-toolbar {
   letter-spacing: 0.05em;
 }
 
+.version-badge {
+  background: linear-gradient(135deg, var(--app-ebay-blue), #2563eb);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 1em;
+}
+
 /* Glassmorphism Metric Cards */
 .metric-card {
   background: var(--app-card-bg);
@@ -210,9 +222,11 @@ ion-tab-button {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--ion-background-color);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--ion-border-color);
   border-radius: 4px;

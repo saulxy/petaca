@@ -48,8 +48,8 @@ export const DashboardTab: React.FC = () => {
         <IonToolbar color="dark">
           <IonTitle>
             <div className="brand-header">
-              <span>📦 {STORE_CONFIG.appName}</span>
-              <span className="brand-badge">Version {STORE_CONFIG.version}</span>
+              <span>📦</span>
+              <span className="version-badge">V. {STORE_CONFIG.version}</span>
             </div>
           </IonTitle>
 
@@ -85,7 +85,7 @@ export const DashboardTab: React.FC = () => {
                 boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.4)'
               }}>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, fontFamily: 'var(--ion-heading-font-family)' }}>
-                  {STORE_CONFIG.storeName} - {STORE_CONFIG.storeTagline} 🚀
+                  {STORE_CONFIG.storeName} - {STORE_CONFIG.storeTagline}
                 </h1>
               </div>
             </IonCol>
@@ -94,11 +94,8 @@ export const DashboardTab: React.FC = () => {
           {/* Metric Cards Grid */}
           <IonRow>
             {/* Metric 1: Total Active Value */}
-            <IonCol size="12" sizeSm="6" sizeLg="3">
+            <IonCol size="12" sizeSm="6" sizeLg="4">
               <div className="metric-card">
-                <div className="metric-icon-wrapper" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
-                  <IonIcon icon={cubeOutline} />
-                </div>
                 <div className="metric-label">Active Listings Value</div>
                 <div className="metric-value">${stats.totalActiveListValue.toFixed(2)}</div>
                 <div className="metric-sub" style={{ color: '#10b981' }}>
@@ -108,11 +105,8 @@ export const DashboardTab: React.FC = () => {
             </IonCol>
 
             {/* Metric 2: Capital Invested */}
-            <IonCol size="12" sizeSm="6" sizeLg="3">
+            <IonCol size="12" sizeSm="6" sizeLg="4">
               <div className="metric-card">
-                <div className="metric-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
-                  <IonIcon icon={walletOutline} />
-                </div>
                 <div className="metric-label">Total Capital Invested</div>
                 <div className="metric-value">${stats.totalInvestedCost.toFixed(2)}</div>
                 <div className="metric-sub" style={{ color: 'var(--app-subtext)' }}>
@@ -121,34 +115,15 @@ export const DashboardTab: React.FC = () => {
               </div>
             </IonCol>
 
-            {/* Metric 3: Potential Net Profit */}
-            <IonCol size="12" sizeSm="6" sizeLg="3">
+            {/* Metric 3: Potential Profit - Stinll in the inventory */}
+            <IonCol size="12" sizeSm="6" sizeLg="4">
               <div className="metric-card">
-                <div className="metric-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-                  <IonIcon icon={trendingUpOutline} />
+                <div className="metric-label">Potential Profit</div>
+                <div className="metric-value" style={{ color: '#ccd226ff' }}>
+                  ~${stats.potentialProfit.toFixed(2)}
                 </div>
-                <div className="metric-label">Est. Potential Profit</div>
-                <div className="metric-value" style={{ color: '#10b981' }}>
-                  +${stats.potentialProfit.toFixed(2)}
-                </div>
-                <div className="metric-sub" style={{ color: '#10b981' }}>
-                  {stats.averageMarginPct}% Avg Margin
-                </div>
-              </div>
-            </IonCol>
-
-            {/* Metric 4: Realized Profit */}
-            <IonCol size="12" sizeSm="6" sizeLg="3">
-              <div className="metric-card">
-                <div className="metric-icon-wrapper" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
-                  <IonIcon icon={pieChartOutline} />
-                </div>
-                <div className="metric-label">Realized Profit (Sales Log)</div>
-                <div className="metric-value" style={{ color: '#a855f7' }}>
-                  +${stats.realizedProfitThisMonth.toFixed(2)}
-                </div>
-                <div className="metric-sub" style={{ color: 'var(--app-subtext)' }}>
-                  {stats.soldCount} items sold
+                <div className="metric-sub" style={{ color: '#ccd226ff' }}>
+                  {stats.averageMarginPct} unlisted items
                 </div>
               </div>
             </IonCol>
@@ -156,59 +131,6 @@ export const DashboardTab: React.FC = () => {
 
           {/* Spotlight Active Items & Sales Activity */}
           <IonRow className="ion-margin-top">
-            {/* Active Items Spotlight */}
-            <IonCol size="12" sizeLg="8">
-              <div style={{ background: 'var(--app-card-bg)', border: '1px solid var(--app-card-border)', borderRadius: '16px', padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem', fontFamily: 'var(--ion-heading-font-family)' }}>
-                    Active Inventory Spotlight
-                  </h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--app-subtext)' }}>
-                    {activeItems.length} items ready to sell
-                  </span>
-                </div>
-
-                <IonGrid style={{ padding: 0 }}>
-                  <IonRow>
-                    {activeItems.slice(0, 4).map(item => {
-                      const estimatedFee = (item.listPrice * 0.1325) + 0.30;
-                      const estimatedNet = item.listPrice - item.purchaseCost - estimatedFee;
-
-                      return (
-                        <IonCol size="12" sizeSm="6" key={item.id}>
-                          <div
-                            className="inventory-card"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => setSelectedItem(item)}
-                          >
-                            <img src={item.imageUrl} alt={item.title} className="inventory-thumb" />
-                            <div className="inventory-body">
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                  <span className="item-sku">{item.sku}</span>
-                                  <span className="bin-tag">
-                                    <IonIcon icon={locationOutline} /> {item.locationBin}
-                                  </span>
-                                </div>
-                                <div style={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.3, height: '2.6em', overflow: 'hidden' }}>
-                                  {item.title}
-                                </div>
-                              </div>
-
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                                <div className="price-tag">${item.listPrice.toFixed(2)}</div>
-                                <div className="profit-pill">+${estimatedNet.toFixed(2)}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </IonCol>
-                      );
-                    })}
-                  </IonRow>
-                </IonGrid>
-              </div>
-            </IonCol>
-
             {/* Recent Sales Activity Feed */}
             <IonCol size="12" sizeLg="4">
               <div style={{ background: 'var(--app-card-bg)', border: '1px solid var(--app-card-border)', borderRadius: '16px', padding: '20px', height: '100%' }}>
@@ -269,6 +191,58 @@ export const DashboardTab: React.FC = () => {
                     ))}
                   </div>
                 )}
+              </div>
+            </IonCol>
+            {/* Active Items Spotlight */}
+            <IonCol size="12" sizeLg="8">
+              <div style={{ background: 'var(--app-card-bg)', border: '1px solid var(--app-card-border)', borderRadius: '16px', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem', fontFamily: 'var(--ion-heading-font-family)' }}>
+                    Active Inventory Spotlight
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--app-subtext)' }}>
+                    {activeItems.length} items ready to sell
+                  </span>
+                </div>
+
+                <IonGrid style={{ padding: 0 }}>
+                  <IonRow>
+                    {activeItems.slice(0, 4).map(item => {
+                      const estimatedFee = (item.listPrice * 0.1325) + 0.30;
+                      const estimatedNet = item.listPrice - item.purchaseCost - estimatedFee;
+
+                      return (
+                        <IonCol size="12" sizeSm="6" key={item.id}>
+                          <div
+                            className="inventory-card"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => setSelectedItem(item)}
+                          >
+                            <img src={item.imageUrl} alt={item.title} className="inventory-thumb" />
+                            <div className="inventory-body">
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                  <span className="item-sku">{item.sku}</span>
+                                  <span className="bin-tag">
+                                    <IonIcon icon={locationOutline} /> {item.locationBin}
+                                  </span>
+                                </div>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.3, height: '2.6em', overflow: 'hidden' }}>
+                                  {item.title}
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                                <div className="price-tag">${item.listPrice.toFixed(2)}</div>
+                                <div className="profit-pill">+${estimatedNet.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </IonCol>
+                      );
+                    })}
+                  </IonRow>
+                </IonGrid>
               </div>
             </IonCol>
           </IonRow>
