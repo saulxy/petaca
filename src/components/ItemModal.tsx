@@ -189,9 +189,9 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       images: images.length > 0 ? images : [primaryImg],
       notes: notes.trim(),
       ebayListingId: ebayListingId.trim(),
-      ebayUrl: ebayListingId ? `https://www.ebay.com/itm/${ebayListingId}` : undefined,
+      ebayUrl: ebayListingId ? `https://www.ebay.com/itm/${ebayListingId}` : '',
       dateAcquired: itemToEdit?.dateAcquired || new Date().toISOString().split('T')[0],
-      dateListed: status === 'Active' ? (itemToEdit?.dateListed || new Date().toISOString().split('T')[0]) : undefined,
+      dateListed: status === 'Active' ? (itemToEdit?.dateListed || new Date().toISOString().split('T')[0]) : '',
       weightOz: Number(weightOz) || 16
     };
 
