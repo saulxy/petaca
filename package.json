@@ -6,9 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npm run build && npx cap sync android",
+    "android:run": "npm run cap:sync && adb install -r android/app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n com.petaca.app/.MainActivity"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
     "@ionic/react": "^8.0.0",
     "@ionic/react-router": "^8.0.0",
     "firebase": "^12.16.0",
