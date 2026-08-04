@@ -14,6 +14,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:102938475610:web:abcdef123456789"
 };
 
+import { getStorage } from 'firebase/storage';
+
 // Console Log Statements to verify credential source
 if (hasEnvProjectId && hasEnvApiKey) {
   console.log(
@@ -33,7 +35,8 @@ if (hasEnvProjectId && hasEnvApiKey) {
 // Initialize Firebase App singleton
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Cloud Firestore instance
+// Initialize Cloud Firestore & Firebase Storage instances
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 export default app;
 

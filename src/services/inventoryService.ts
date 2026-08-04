@@ -12,12 +12,62 @@ import {
   orderBy,
   Unsubscribe
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../config/firebase';
 import { InventoryItem, SaleRecord, StorageBin } from '../types/inventory';
 
 const ITEMS_COLLECTION = 'items';
 const SALES_COLLECTION = 'sales';
 const BINS_COLLECTION = 'bins';
+
+/**
+ * Upload a single image (Data URL or base64 string) to Firebase Storage and return its public download URL.
+ * If the input is already an HTTP/HTTPS URL, it returns the URL directly.
+ */
+export const uploadImageToStorage = async (
+  imageStr: string,
+  itemId: string,
+  index: number = 0
+): Promise<string> => {
+  if (!imageStr) return '';
+  // If image is already a remote HTTP/HTTPS URL, preserve it
+  if (imageStr.startsWith('http://') || imageStr.startsWith('https://')) {
+    return imageStr;
+  }
+
+  // Upload data URL (e.g. data:image/png;base64,...) to Firebase Storage
+  if (imageStr.startsWith('data:image/')) {
+    try {
+      const mimeMatch = imageStr.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+      const ext = mimeMatch ? mimeMatch[1].split('/')[1] : 'jpg';
+      const storagePath = `inventory/${itemId}/img_${Date.now()}_${index}.${ext}`;
+      const storageRef = ref(storage, storagePath);
+
+      const snapshot = await uploadString(storageRef, imageStr, 'data_url');
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      console.log(`📸 [Firebase Storage] Uploaded image ${index + 1} for item ${itemId}:`, downloadUrl);
+      return downloadUrl;
+    } catch (err) {
+      console.warn(`⚠️ [Firebase Storage Warning] Failed to upload image ${index + 1} to Firebase Storage:`, err);
+      // Fallback to original string if upload fails or offline
+      return imageStr;
+    }
+  }
+
+  return imageStr;
+};
+
+/**
+ * Process and upload an array of images for an inventory item to Firebase Storage.
+ */
+export const uploadItemImages = async (
+  images: string[],
+  itemId: string
+): Promise<string[]> => {
+  if (!Array.isArray(images) || images.length === 0) return [];
+  const uploadPromises = images.map((img, idx) => uploadImageToStorage(img, itemId, idx));
+  return Promise.all(uploadPromises);
+};
 
 /**
  * Subscribe to real-time updates for inventory items from Cloud Firestore.
@@ -88,13 +138,21 @@ export const sanitizeForFirestore = <T extends Record<string, any>>(obj: T): T =
 };
 
 /**
- * Add a new item to Cloud Firestore.
+ * Add a new item to Cloud Firestore after uploading images to Firebase Storage.
  */
 export const addItemToFirestore = async (
   itemData: Omit<InventoryItem, 'id'> & { id?: string }
 ): Promise<string> => {
   const docId = itemData.id || `item-${Date.now()}`;
   const docRef = doc(db, ITEMS_COLLECTION, docId);
+
+  const rawImages = Array.isArray(itemData.images) && itemData.images.length > 0
+    ? itemData.images
+    : (itemData.imageUrl ? [itemData.imageUrl] : []);
+
+  // Upload base64/dataURL images to Firebase Storage
+  const uploadedImages = await uploadItemImages(rawImages, docId);
+  const primaryImageUrl = uploadedImages.length > 0 ? uploadedImages[0] : (itemData.imageUrl || '');
   
   const rawPayload = {
     ...itemData,
@@ -103,9 +161,8 @@ export const addItemToFirestore = async (
     ebayListingId: itemData.ebayListingId || '',
     ebayUrl: itemData.ebayUrl || '',
     dateListed: itemData.dateListed || '',
-    images: Array.isArray(itemData.images) && itemData.images.length > 0
-      ? itemData.images
-      : (itemData.imageUrl ? [itemData.imageUrl] : []),
+    imageUrl: primaryImageUrl,
+    images: uploadedImages,
     updatedAt: new Date().toISOString()
   };
 
@@ -115,11 +172,19 @@ export const addItemToFirestore = async (
 };
 
 /**
- * Update an existing inventory item in Cloud Firestore.
+ * Update an existing inventory item in Cloud Firestore after uploading any new images to Firebase Storage.
  */
 export const updateItemInFirestore = async (item: InventoryItem): Promise<void> => {
   if (!item.id) throw new Error('Item ID is required for updating in Firestore');
   const docRef = doc(db, ITEMS_COLLECTION, item.id);
+
+  const rawImages = Array.isArray(item.images) && item.images.length > 0
+    ? item.images
+    : (item.imageUrl ? [item.imageUrl] : []);
+
+  // Upload base64/dataURL images to Firebase Storage
+  const uploadedImages = await uploadItemImages(rawImages, item.id);
+  const primaryImageUrl = uploadedImages.length > 0 ? uploadedImages[0] : (item.imageUrl || '');
 
   const rawPayload = {
     ...item,
@@ -127,9 +192,8 @@ export const updateItemInFirestore = async (item: InventoryItem): Promise<void> 
     ebayListingId: item.ebayListingId || '',
     ebayUrl: item.ebayUrl || '',
     dateListed: item.dateListed || '',
-    images: Array.isArray(item.images) && item.images.length > 0
-      ? item.images
-      : (item.imageUrl ? [item.imageUrl] : []),
+    imageUrl: primaryImageUrl,
+    images: uploadedImages,
     updatedAt: new Date().toISOString()
   };
 
