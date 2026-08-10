@@ -1,24 +1,35 @@
 // Petaca Inventory Types & Interfaces
 
-export type ListingStatus = 'Active' | 'Draft' | 'Sold' | 'Shipped' | 'Archived';
+export const LISTING_STATUSES = [
+  'Active',
+  'Draft',
+  'Sold',
+  'Shipped',
+  'Archived'
+] as const;
+export type ListingStatus = (typeof LISTING_STATUSES)[number];
 
-export type ItemCondition = 
-  | 'Brand New' 
-  | 'Like New' 
-  | 'Very Good' 
-  | 'Good' 
-  | 'Acceptable' 
-  | 'For Parts / Repair';
+export const ITEM_CONDITIONS = [
+  'Brand New',
+  'Like New',
+  'Very Good',
+  'Good',
+  'Acceptable',
+  'For Parts / Repair'
+] as const;
+export type ItemCondition = (typeof ITEM_CONDITIONS)[number];
 
-export type ItemCategory = 
-  | 'Electronics' 
-  | 'Video Games & Consoles' 
-  | 'Collectibles' 
-  | 'Clothing & Sneakers' 
-  | 'Toys & Hobbies' 
-  | 'Home & Garden' 
-  | 'Jewelry & Watches' 
-  | 'Other';
+export const ITEM_CATEGORIES = [
+  'Electronics',
+  'Video Games & Consoles',
+  'Collectibles',
+  'Clothing & Sneakers',
+  'Toys & Hobbies',
+  'Home & Garden',
+  'Jewelry & Watches',
+  'Other'
+] as const;
+export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
 export interface InventoryItem {
   id: string;

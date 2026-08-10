@@ -30,7 +30,7 @@ import {
   cubeOutline
 } from 'ionicons/icons';
 import { useInventory } from '../context/InventoryContext';
-import { InventoryItem, ListingStatus } from '../types/inventory';
+import { InventoryItem, ListingStatus, ITEM_CATEGORIES } from '../types/inventory';
 import { ItemModal } from '../components/ItemModal';
 import { ItemDetailModal } from '../components/ItemDetailModal';
 
@@ -146,10 +146,9 @@ export const InventoryTab: React.FC = () => {
                 <IonLabel position="stacked">Filter by Category</IonLabel>
                 <IonSelect value={categoryFilter} onIonChange={e => setCategoryFilter(e.detail.value)}>
                   <IonSelectOption value="All">All Categories</IonSelectOption>
-                  <IonSelectOption value="Electronics">Electronics</IonSelectOption>
-                  <IonSelectOption value="Video Games & Consoles">Video Games & Consoles</IonSelectOption>
-                  <IonSelectOption value="Collectibles">Collectibles</IonSelectOption>
-                  <IonSelectOption value="Clothing & Sneakers">Clothing & Sneakers</IonSelectOption>
+                  {ITEM_CATEGORIES.map(cat => (
+                    <IonSelectOption key={cat} value={cat}>{cat}</IonSelectOption>
+                  ))}
                 </IonSelect>
               </IonItem>
             </IonCol>

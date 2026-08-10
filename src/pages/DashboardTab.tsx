@@ -201,7 +201,7 @@ export const DashboardTab: React.FC = () => {
                     Active Inventory Spotlight
                   </h3>
                   <span style={{ fontSize: '0.8rem', color: 'var(--app-subtext)' }}>
-                    {activeItems.length} items ready to sell
+                    {activeItems.length} item(s) ready to sell
                   </span>
                 </div>
 

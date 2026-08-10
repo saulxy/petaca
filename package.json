@@ -1,7 +1,7 @@
 {
   "name": "petaca-ebay-inventory",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
+    "@capacitor/camera": "^8.2.2",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
     "@ionic/react": "^8.0.0",

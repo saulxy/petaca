@@ -92,7 +92,7 @@ export const subscribeToItems = (
           listPrice: Number(data.listPrice) || 0,
           quantity: Number(data.quantity) || 1,
           locationBin: data.locationBin || 'Bin A1',
-          status: data.status || 'Active',
+          status: data.status || 'Draft',
           imageUrl: data.imageUrl || '',
           images: Array.isArray(data.images) ? data.images : (data.imageUrl ? [data.imageUrl] : []),
           notes: data.notes || '',
@@ -153,7 +153,7 @@ export const addItemToFirestore = async (
   // Upload base64/dataURL images to Firebase Storage
   const uploadedImages = await uploadItemImages(rawImages, docId);
   const primaryImageUrl = uploadedImages.length > 0 ? uploadedImages[0] : (itemData.imageUrl || '');
-  
+
   const rawPayload = {
     ...itemData,
     id: docId,

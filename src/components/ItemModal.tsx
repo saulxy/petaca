@@ -17,10 +17,21 @@ import {
   IonRow,
   IonCol,
   IonIcon,
-  IonNote
+  IonNote,
+  IonActionSheet
 } from '@ionic/react';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import { closeOutline, saveOutline, calculatorOutline, imageOutline, cameraOutline, addOutline, trashOutline } from 'ionicons/icons';
-import { InventoryItem, ItemCategory, ItemCondition, ListingStatus } from '../types/inventory';
+import {
+  InventoryItem,
+  ItemCategory,
+  ItemCondition,
+  ListingStatus,
+  ITEM_CATEGORIES,
+  ITEM_CONDITIONS,
+  LISTING_STATUSES
+} from '../types/inventory';
 import { useInventory } from '../context/InventoryContext';
 
 interface ItemModalProps {
@@ -29,33 +40,13 @@ interface ItemModalProps {
   itemToEdit?: InventoryItem | null;
 }
 
-const categories: ItemCategory[] = [
-  'Electronics',
-  'Video Games & Consoles',
-  'Collectibles',
-  'Clothing & Sneakers',
-  'Toys & Hobbies',
-  'Home & Garden',
-  'Jewelry & Watches',
-  'Other'
-];
-
-const conditions: ItemCondition[] = [
-  'Brand New',
-  'Like New',
-  'Very Good',
-  'Good',
-  'Acceptable',
-  'For Parts / Repair'
-];
-
-const statuses: ListingStatus[] = ['Active', 'Draft', 'Sold', 'Shipped', 'Archived'];
-
 export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdit }) => {
   const { addItem, updateItem, bins } = useInventory();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const [showPhotoActionSheet, setShowPhotoActionSheet] = useState<boolean>(false);
   const [title, setTitle] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState<ItemCategory>('Electronics');
@@ -103,8 +94,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       setQuantity(1);
       setLocationBin(bins.length > 0 ? bins[0].name : 'Bin A1');
       setStatus('Active');
-      const defaultImg = 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80';
-      setImages([defaultImg]);
+      setImages([]);
       setNotes('');
       setEbayListingId('');
       setWeightOz(16);
@@ -143,6 +133,41 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
     });
 
     if (e.target) e.target.value = '';
+  };
+
+  const handleTakeCapacitorPhoto = async (source: CameraSource) => {
+    const remainingSlots = MAX_IMAGES - images.length;
+    if (remainingSlots <= 0) return;
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const photo = await Camera.getPhoto({
+          quality: 90,
+          allowEditing: false,
+          resultType: CameraResultType.DataUrl,
+          source: source
+        });
+
+        if (photo && photo.dataUrl) {
+          setImages(prev => [...prev, photo.dataUrl!].slice(0, MAX_IMAGES));
+        }
+      } else {
+        if (source === CameraSource.Camera) {
+          cameraInputRef.current?.click();
+        } else {
+          galleryInputRef.current?.click();
+        }
+      }
+    } catch (err: any) {
+      if (err?.message !== 'User cancelled photos app') {
+        console.warn('Capacitor camera fallback:', err);
+        if (source === CameraSource.Camera) {
+          cameraInputRef.current?.click();
+        } else {
+          galleryInputRef.current?.click();
+        }
+      }
+    }
   };
 
   const handleRemoveImage = (index: number, e: React.MouseEvent) => {
@@ -301,7 +326,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
                     value={category}
                     onIonChange={e => setCategory(e.detail.value as ItemCategory)}
                   >
-                    {categories.map(cat => (
+                    {ITEM_CATEGORIES.map(cat => (
                       <IonSelectOption key={cat} value={cat}>{cat}</IonSelectOption>
                     ))}
                   </IonSelect>
@@ -315,7 +340,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
                     value={condition}
                     onIonChange={e => setCondition(e.detail.value as ItemCondition)}
                   >
-                    {conditions.map(cond => (
+                    {ITEM_CONDITIONS.map(cond => (
                       <IonSelectOption key={cond} value={cond}>{cond}</IonSelectOption>
                     ))}
                   </IonSelect>
@@ -332,7 +357,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
                     value={status}
                     onIonChange={e => setStatus(e.detail.value as ListingStatus)}
                   >
-                    {statuses.map(st => (
+                    {LISTING_STATUSES.map(st => (
                       <IonSelectOption key={st} value={st}>{st}</IonSelectOption>
                     ))}
                   </IonSelect>
@@ -366,15 +391,50 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
                     </div>
                   </div>
 
-                  {/* Hidden File Input with Camera Capture Support */}
+                  {/* Hidden File Inputs: Camera Capture vs Photo Gallery */}
                   <input
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    multiple
-                    ref={fileInputRef}
+                    ref={cameraInputRef}
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    ref={galleryInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+
+                  {/* Action Sheet to prompt user on Physical Phone / Device */}
+                  <IonActionSheet
+                    isOpen={showPhotoActionSheet}
+                    onDidDismiss={() => setShowPhotoActionSheet(false)}
+                    header="Select Photo Source"
+                    buttons={[
+                      {
+                        text: 'Take New Photo (Camera)',
+                        icon: cameraOutline,
+                        handler: () => {
+                          handleTakeCapacitorPhoto(CameraSource.Camera);
+                        }
+                      },
+                      {
+                        text: 'Choose Existing Photo(s) (Gallery)',
+                        icon: imageOutline,
+                        handler: () => {
+                          handleTakeCapacitorPhoto(CameraSource.Photos);
+                        }
+                      },
+                      {
+                        text: 'Cancel',
+                        role: 'cancel',
+                        icon: closeOutline
+                      }
+                    ]}
                   />
 
                   <div className="photo-tiles-grid">
@@ -403,11 +463,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
                     {images.length < MAX_IMAGES && (
                       <div
                         className="photo-tile photo-tile-add"
-                        onClick={() => fileInputRef.current?.click()}
-                        title="Take photo with camera or upload image"
+                        onClick={() => setShowPhotoActionSheet(true)}
+                        title="Take photo with camera or select from gallery"
                       >
                         <span className="plus-icon">+</span>
-                        <span className="add-text">Capture</span>
+                        <span className="add-text">Add Photo</span>
                       </div>
                     )}
                   </div>
