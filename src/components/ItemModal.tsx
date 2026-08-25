@@ -33,6 +33,7 @@ import {
   LISTING_STATUSES
 } from '../types/inventory';
 import { useInventory } from '../context/InventoryContext';
+import { compressImage, compressImagesList } from '../utils/imageCompressor';
 
 interface ItemModalProps {
   isOpen: boolean;
@@ -108,7 +109,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
   const estimatedNet = listPrice - purchaseCost - estimatedFee;
   const marginPct = listPrice > 0 ? ((estimatedNet / listPrice) * 100).toFixed(1) : '0';
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -128,9 +129,9 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       });
     });
 
-    Promise.all(filePromises).then(newImages => {
-      setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES));
-    });
+    const rawImages = await Promise.all(filePromises);
+    const compressedNewImages = await compressImagesList(rawImages);
+    setImages(prev => [...prev, ...compressedNewImages].slice(0, MAX_IMAGES));
 
     if (e.target) e.target.value = '';
   };
@@ -142,14 +143,15 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
     try {
       if (Capacitor.isNativePlatform()) {
         const photo = await Camera.getPhoto({
-          quality: 90,
+          quality: 80,
           allowEditing: false,
           resultType: CameraResultType.DataUrl,
           source: source
         });
 
         if (photo && photo.dataUrl) {
-          setImages(prev => [...prev, photo.dataUrl!].slice(0, MAX_IMAGES));
+          const compressed = await compressImage(photo.dataUrl);
+          setImages(prev => [...prev, compressed].slice(0, MAX_IMAGES));
         }
       } else {
         if (source === CameraSource.Camera) {
@@ -184,10 +186,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
     });
   };
 
-  const handleAddUrlImage = () => {
+  const handleAddUrlImage = async () => {
     if (!customUrl.trim()) return;
     if (images.length >= MAX_IMAGES) return;
-    setImages(prev => [...prev, customUrl.trim()].slice(0, MAX_IMAGES));
+    const compressed = await compressImage(customUrl.trim());
+    setImages(prev => [...prev, compressed].slice(0, MAX_IMAGES));
     setCustomUrl('');
     setShowUrlInput(false);
   };

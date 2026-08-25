@@ -11,6 +11,7 @@ import {
   subscribeToBins,
   addBinToFirestore
 } from '../services/inventoryService';
+import { getStorageItem, setStorageItem } from '../services/storageService';
 
 interface InventoryContextType {
   items: InventoryItem[];
@@ -39,20 +40,32 @@ interface InventoryContextType {
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Persistence via localStorage or default mock data as initial fallback
+  // Hydrate state from IndexedDB (with localStorage fallback) or default mock data
   const [items, setItems] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem('petaca_inventory_items');
-    return saved ? JSON.parse(saved) : initialItems;
+    try {
+      const saved = localStorage.getItem('petaca_inventory_items');
+      return saved ? JSON.parse(saved) : initialItems;
+    } catch {
+      return initialItems;
+    }
   });
 
   const [sales, setSales] = useState<SaleRecord[]>(() => {
-    const saved = localStorage.getItem('petaca_inventory_sales');
-    return saved ? JSON.parse(saved) : initialSales;
+    try {
+      const saved = localStorage.getItem('petaca_inventory_sales');
+      return saved ? JSON.parse(saved) : initialSales;
+    } catch {
+      return initialSales;
+    }
   });
 
   const [bins, setBins] = useState<StorageBin[]>(() => {
-    const saved = localStorage.getItem('petaca_inventory_bins');
-    return saved ? JSON.parse(saved) : initialBins;
+    try {
+      const saved = localStorage.getItem('petaca_inventory_bins');
+      return saved ? JSON.parse(saved) : initialBins;
+    } catch {
+      return initialBins;
+    }
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,6 +75,24 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [firebaseConnected, setFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Hydrate state from high-capacity IndexedDB storage on initial load
+  useEffect(() => {
+    let isMounted = true;
+    async function loadStoredData() {
+      const storedItems = await getStorageItem('petaca_inventory_items', items);
+      const storedSales = await getStorageItem('petaca_inventory_sales', sales);
+      const storedBins = await getStorageItem('petaca_inventory_bins', bins);
+
+      if (isMounted) {
+        if (storedItems && storedItems.length > 0) setItems(storedItems);
+        if (storedSales && storedSales.length > 0) setSales(storedSales);
+        if (storedBins && storedBins.length > 0) setBins(storedBins);
+      }
+    }
+    loadStoredData();
+    return () => { isMounted = false; };
+  }, []);
 
   // Real-time Cloud Firestore subscription for Items
   useEffect(() => {
@@ -107,17 +138,17 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, []);
 
-  // Sync to localStorage as offline cache
+  // Sync to IndexedDB + safe quota-protected localStorage
   useEffect(() => {
-    localStorage.setItem('petaca_inventory_items', JSON.stringify(items));
+    setStorageItem('petaca_inventory_items', items);
   }, [items]);
 
   useEffect(() => {
-    localStorage.setItem('petaca_inventory_sales', JSON.stringify(sales));
+    setStorageItem('petaca_inventory_sales', sales);
   }, [sales]);
 
   useEffect(() => {
-    localStorage.setItem('petaca_inventory_bins', JSON.stringify(bins));
+    setStorageItem('petaca_inventory_bins', bins);
   }, [bins]);
 
   // Dark Mode side effect

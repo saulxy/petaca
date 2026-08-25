@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync android",
-    "android:run": "npm run cap:sync && adb install -r android/app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n com.petaca.app/.MainActivity"
+    "android:run": "npm run cap:sync && cd android && gradlew.bat assembleDebug && cd .. && adb install -r android/app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n com.petaca.app/.MainActivity"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
