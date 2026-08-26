@@ -90,8 +90,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({ isOpen, onClose, itemToEdi
       setSku(`SKU-${Math.floor(100000 + Math.random() * 900000)}`);
       setCategory('Electronics');
       setCondition('Very Good');
-      setPurchaseCost(20.00);
-      setListPrice(59.99);
+      setPurchaseCost(0);
+      setListPrice(0);
       setQuantity(1);
       setLocationBin(bins.length > 0 ? bins[0].name : 'Bin A1');
       setStatus('Active');

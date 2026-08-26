@@ -373,3 +373,88 @@ ion-tab-button {
   background: rgba(239, 68, 68, 1);
   transform: scale(1.2);
 }
+
+/* ==========================================================================
+   Form Controls & Selects (Fix Dark Mode font visibility)
+   ========================================================================== */
+ion-item {
+  --background: var(--ion-item-background);
+  --color: var(--ion-text-color);
+  --border-color: var(--ion-border-color);
+  --highlight-color-focused: var(--ion-color-primary);
+  color: var(--ion-text-color);
+}
+
+ion-label,
+ion-item ion-label {
+  --color: var(--app-subtext) !important;
+  color: var(--app-subtext) !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Fix IonSelect Text, Placeholder, and Arrow Icon color in Dark Mode */
+ion-select {
+  --color: var(--ion-text-color) !important;
+  --placeholder-color: var(--app-subtext) !important;
+  --placeholder-opacity: 0.85;
+  color: var(--ion-text-color) !important;
+  font-weight: 600;
+  width: 100%;
+}
+
+ion-select::part(text) {
+  color: var(--ion-text-color) !important;
+  font-weight: 600;
+}
+
+ion-select::part(placeholder) {
+  color: var(--app-subtext) !important;
+}
+
+ion-select::part(icon) {
+  color: var(--app-subtext) !important;
+  opacity: 0.9;
+}
+
+/* Fix Inputs and Textarea text color in Dark Mode */
+ion-input,
+ion-textarea {
+  --color: var(--ion-text-color) !important;
+  --placeholder-color: var(--app-subtext) !important;
+  --placeholder-opacity: 0.8;
+  color: var(--ion-text-color) !important;
+}
+
+/* Dark Mode Modal & Alert Overlays (Select Dialogs) */
+body.dark ion-alert,
+ion-alert {
+  --background: #161b22;
+}
+
+.alert-wrapper {
+  background: #161b22 !important;
+  border: 1px solid var(--app-card-border);
+}
+
+.alert-title,
+.alert-sub-title,
+.alert-radio-label,
+.alert-checkbox-label {
+  color: #f0f6fc !important;
+}
+
+.alert-button {
+  color: var(--ion-color-primary) !important;
+}
+
+body.light-theme .alert-wrapper {
+  background: #ffffff !important;
+}
+
+body.light-theme .alert-title,
+body.light-theme .alert-sub-title,
+body.light-theme .alert-radio-label,
+body.light-theme .alert-checkbox-label {
+  color: #1f2328 !important;
+}

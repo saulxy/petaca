@@ -4,7 +4,7 @@ export const STORE_CONFIG = {
   appName: 'Petaca',
   storeName: 'Mistlunar',
   storeTagline: 'Inventory Hub',
-  version: '2026.07.21',
+  version: '2026.08.26',
   defaultEbayFeePct: 13.25,
   defaultEbayFeeFixed: 0.30,
 } as const;
