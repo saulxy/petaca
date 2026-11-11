@@ -31,6 +31,7 @@ import {
 } from 'ionicons/icons';
 import { InventoryItem } from '../types/inventory';
 import { useInventory } from '../context/InventoryContext';
+import { formatSignedCurrency } from '../utils/numberUtils';
 
 interface ItemDetailModalProps {
   item: InventoryItem | null;
@@ -158,7 +159,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, isOpen, 
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--app-subtext)', textTransform: 'uppercase' }}>Cost / Profit</div>
                       <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981' }}>
-                        +${estimatedNet.toFixed(2)} ({marginPct}%)
+                        {formatSignedCurrency(estimatedNet)} ({marginPct}%)
                       </div>
                     </div>
                   </div>
@@ -187,7 +188,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, isOpen, 
 
                     <div>
                       <span style={{ fontSize: '0.75rem', color: 'var(--app-subtext)' }}>Est. Net Profit</span>
-                      <div style={{ fontWeight: 700, fontSize: '1rem', color: '#10b981' }}>${estimatedNet.toFixed(2)}</div>
+                      <div style={{ fontWeight: 700, fontSize: '1rem', color: '#10b981' }}>{formatSignedCurrency(estimatedNet)}</div>
                     </div>
 
                     <div>

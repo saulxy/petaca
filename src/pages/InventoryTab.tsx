@@ -33,6 +33,7 @@ import { useInventory } from '../context/InventoryContext';
 import { InventoryItem, ListingStatus, ITEM_CATEGORIES } from '../types/inventory';
 import { ItemModal } from '../components/ItemModal';
 import { ItemDetailModal } from '../components/ItemDetailModal';
+import { formatSignedCurrency } from '../utils/numberUtils';
 
 export const InventoryTab: React.FC = () => {
   const { items, bins, searchQuery, setSearchQuery } = useInventory();
@@ -225,7 +226,7 @@ export const InventoryTab: React.FC = () => {
                               <div style={{ fontSize: '0.7rem', color: 'var(--app-subtext)' }}>Cost: ${item.purchaseCost.toFixed(2)}</div>
                               <div className="price-tag">${item.listPrice.toFixed(2)}</div>
                             </div>
-                            <div className="profit-pill">+${estimatedNet.toFixed(2)}</div>
+                            <div className="profit-pill">{formatSignedCurrency(estimatedNet)}</div>
                           </div>
                         </div>
                       </div>
@@ -279,7 +280,7 @@ export const InventoryTab: React.FC = () => {
                         ${item.listPrice.toFixed(2)}
                       </div>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10b981' }}>
-                        +${estimatedNet.toFixed(2)} profit
+                        {formatSignedCurrency(estimatedNet)} profit
                       </div>
                     </div>
                   </div>

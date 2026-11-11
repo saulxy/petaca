@@ -34,6 +34,7 @@ import { ItemDetailModal } from '../components/ItemDetailModal';
 import { InventoryItem } from '../types/inventory';
 
 import { STORE_CONFIG } from '../constants';
+import { formatSignedCurrency } from '../utils/numberUtils';
 
 export const DashboardTab: React.FC = () => {
   const { stats, items, sales, isDarkMode, toggleDarkMode } = useInventory();
@@ -120,7 +121,7 @@ export const DashboardTab: React.FC = () => {
               <div className="metric-card">
                 <div className="metric-label">Potential Profit</div>
                 <div className="metric-value" style={{ color: '#ccd226ff' }}>
-                  ~${stats.potentialProfit.toFixed(2)}
+                  ~{formatSignedCurrency(stats.potentialProfit)}
                 </div>
                 <div className="metric-sub" style={{ color: '#ccd226ff' }}>
                   {stats.averageMarginPct} unlisted items
@@ -181,7 +182,7 @@ export const DashboardTab: React.FC = () => {
 
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#10b981' }}>
-                            +${sale.netProfit.toFixed(2)}
+                            {formatSignedCurrency(sale.netProfit)}
                           </div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--app-subtext)' }}>
                             Sale: ${sale.salePrice.toFixed(2)}
@@ -234,7 +235,7 @@ export const DashboardTab: React.FC = () => {
 
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                                 <div className="price-tag">${item.listPrice.toFixed(2)}</div>
-                                <div className="profit-pill">+${estimatedNet.toFixed(2)}</div>
+                                <div className="profit-pill">{formatSignedCurrency(estimatedNet)}</div>
                               </div>
                             </div>
                           </div>

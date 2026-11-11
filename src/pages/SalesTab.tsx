@@ -20,6 +20,7 @@ import {
   calendarOutline
 } from 'ionicons/icons';
 import { useInventory } from '../context/InventoryContext';
+import { formatSignedCurrency, getProfitPillClass } from '../utils/numberUtils';
 
 export const SalesTab: React.FC = () => {
   const { sales } = useInventory();
@@ -66,10 +67,10 @@ export const SalesTab: React.FC = () => {
                 </div>
                 <div className="metric-label">Net Realized Profit</div>
                 <div className="metric-value" style={{ color: '#10b981' }}>
-                  +${totalNetProfit.toFixed(2)}
+                  {formatSignedCurrency(totalNetProfit)}
                 </div>
                 <div className="metric-sub" style={{ color: '#10b981' }}>
-                  Avg +${avgNetProfit.toFixed(2)} / sale
+                  Avg {formatSignedCurrency(avgNetProfit)} / sale
                 </div>
               </div>
             </IonCol>
@@ -166,8 +167,8 @@ export const SalesTab: React.FC = () => {
                               </td>
 
                               <td style={{ padding: '12px 8px', textAlign: 'right' }}>
-                                <span className="profit-pill" style={{ fontSize: '0.9rem' }}>
-                                  +${sale.netProfit.toFixed(2)}
+                                <span className={getProfitPillClass(sale.netProfit)} style={{ fontSize: '0.9rem' }}>
+                                  {formatSignedCurrency(sale.netProfit)}
                                 </span>
                               </td>
                             </tr>
