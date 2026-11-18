@@ -60,13 +60,12 @@ export const DashboardTab: React.FC = () => {
             </IonButton>
 
             <IonButton
-              color="primary"
+              color="success"
               fill="solid"
               style={{ borderRadius: '8px', fontWeight: 700 }}
               onClick={() => setIsAddModalOpen(true)}
             >
-              <IonIcon slot="start" icon={addOutline} />
-              Add Item
+              New
             </IonButton>
           </IonButtons>
         </IonToolbar>

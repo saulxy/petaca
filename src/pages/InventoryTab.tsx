@@ -12,16 +12,19 @@ import {
   IonGrid,
   IonRow,
   IonCol,
+  IonButtons,
   IonButton,
   IonIcon,
   IonSelect,
   IonSelectOption,
   IonFab,
   IonFabButton,
-  IonItem
+  IonItem,
+  IonToast
 } from '@ionic/react';
 import {
   addOutline,
+  cloudUploadOutline,
   locationOutline,
   gridOutline,
   listOutline,
@@ -36,7 +39,7 @@ import { ItemDetailModal } from '../components/ItemDetailModal';
 import { formatSignedCurrency } from '../utils/numberUtils';
 
 export const InventoryTab: React.FC = () => {
-  const { items, bins, searchQuery, setSearchQuery } = useInventory();
+  const { items, bins, searchQuery, setSearchQuery, syncLocalDataToCloud } = useInventory();
 
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
@@ -46,6 +49,25 @@ export const InventoryTab: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const handleSyncLocalData = async () => {
+    setIsSyncing(true);
+    try {
+      const { itemsSynced, salesSynced, binsSynced } = await syncLocalDataToCloud();
+      if (itemsSynced === 0 && salesSynced === 0 && binsSynced === 0) {
+        setSyncMessage('No local data found in storage to sync.');
+      } else {
+        setSyncMessage(`Synced ${itemsSynced} item(s), ${salesSynced} sale(s), and ${binsSynced} bin(s) to Cloud!`);
+      }
+    } catch (err) {
+      console.error('Failed to sync local data to cloud:', err);
+      setSyncMessage('Error syncing local data to Cloud.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Filtered Inventory items
   const filteredItems = useMemo(() => {
@@ -76,19 +98,31 @@ export const InventoryTab: React.FC = () => {
       <IonHeader>
         <IonToolbar color="dark">
           <IonTitle>Inventory Catalog</IonTitle>
-          <IonButton
-            slot="end"
-            color="primary"
-            fill="solid"
-            style={{ marginRight: '16px' }}
-            onClick={() => {
-              setItemToEdit(null);
-              setIsAddModalOpen(true);
-            }}
-          >
-            <IonIcon slot="start" icon={addOutline} />
-            Add Item
-          </IonButton>
+          <IonButtons slot="end">
+            <IonButton
+              color="primary"
+              fill="outline"
+              size="small"
+              style={{ margin: 8 }}
+              disabled={isSyncing}
+              onClick={handleSyncLocalData}
+            >
+              <IonIcon slot="start" icon={cloudUploadOutline} />
+              {isSyncing ? 'Syncing...' : 'Sync'}
+            </IonButton>
+            <IonButton
+              color="success"
+              fill="solid"
+              size="small"
+              style={{ margin: 0, fontWeight: 700 }}
+              onClick={() => {
+                setItemToEdit(null);
+                setIsAddModalOpen(true);
+              }}
+            >
+              New
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
 
         {/* Filter & Search Bar Toolbar */}
@@ -312,6 +346,14 @@ export const InventoryTab: React.FC = () => {
             setItemToEdit(item);
             setIsAddModalOpen(true);
           }}
+        />
+
+        <IonToast
+          isOpen={!!syncMessage}
+          message={syncMessage || ''}
+          duration={3500}
+          position="bottom"
+          onDidDismiss={() => setSyncMessage(null)}
         />
       </IonContent>
     </IonPage>

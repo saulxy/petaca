@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { InventoryItem, SaleRecord, StorageBin, InventoryStats, ListingStatus } from '../types/inventory';
-import { initialItems, initialSales, initialBins } from '../data/initialData';
+import { InventoryItem, SaleRecord, StorageBin, InventoryStats } from '../types/inventory';
 import {
   subscribeToItems,
   addItemToFirestore,
@@ -11,7 +10,8 @@ import {
   subscribeToBins,
   addBinToFirestore
 } from '../services/inventoryService';
-import { getStorageItem, setStorageItem } from '../services/storageService';
+import { ensureAnonymousAuth } from '../config/firebase';
+import { getStorageItem } from '../services/storageService';
 
 interface InventoryContextType {
   items: InventoryItem[];
@@ -35,38 +35,16 @@ interface InventoryContextType {
   deleteItem: (id: string) => void;
   markAsSold: (itemId: string, salePrice: number, buyerUsername: string, shippingCost: number) => void;
   addBin: (bin: Omit<StorageBin, 'id'>) => void;
+  syncLocalDataToCloud: () => Promise<{ itemsSynced: number; salesSynced: number; binsSynced: number }>;
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Hydrate state from IndexedDB (with localStorage fallback) or default mock data
-  const [items, setItems] = useState<InventoryItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('petaca_inventory_items');
-      return saved ? JSON.parse(saved) : initialItems;
-    } catch {
-      return initialItems;
-    }
-  });
-
-  const [sales, setSales] = useState<SaleRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem('petaca_inventory_sales');
-      return saved ? JSON.parse(saved) : initialSales;
-    } catch {
-      return initialSales;
-    }
-  });
-
-  const [bins, setBins] = useState<StorageBin[]>(() => {
-    try {
-      const saved = localStorage.getItem('petaca_inventory_bins');
-      return saved ? JSON.parse(saved) : initialBins;
-    } catch {
-      return initialBins;
-    }
-  });
+  // Cloud Firestore is the single source of truth
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [bins, setBins] = useState<StorageBin[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -76,80 +54,57 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [firebaseConnected, setFirebaseConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Hydrate state from high-capacity IndexedDB storage on initial load
-  useEffect(() => {
-    let isMounted = true;
-    async function loadStoredData() {
-      const storedItems = await getStorageItem('petaca_inventory_items', items);
-      const storedSales = await getStorageItem('petaca_inventory_sales', sales);
-      const storedBins = await getStorageItem('petaca_inventory_bins', bins);
-
-      if (isMounted) {
-        if (storedItems && storedItems.length > 0) setItems(storedItems);
-        if (storedSales && storedSales.length > 0) setSales(storedSales);
-        if (storedBins && storedBins.length > 0) setBins(storedBins);
-      }
-    }
-    loadStoredData();
-    return () => { isMounted = false; };
-  }, []);
-
-  // Real-time Cloud Firestore subscription for Items
+  // Real-time Cloud Firestore subscriptions (Single Source of Truth)
   useEffect(() => {
     let isSubscribed = true;
+    let unsubscribeItems: (() => void) | undefined;
+    let unsubscribeSales: (() => void) | undefined;
+    let unsubscribeBins: (() => void) | undefined;
 
-    const unsubscribeItems = subscribeToItems(
-      (firestoreItems) => {
+    ensureAnonymousAuth()
+      .then(() => {
         if (!isSubscribed) return;
-        console.log(`🔥 [Firestore Sync] Successfully connected to Cloud Firestore! Loaded ${firestoreItems.length} item(s).`);
-        if (firestoreItems && firestoreItems.length > 0) {
-          setItems(firestoreItems);
-        }
-        setFirebaseConnected(true);
-        setIsLoading(false);
-      },
-      (err) => {
+
+        unsubscribeItems = subscribeToItems(
+          (firestoreItems) => {
+            if (!isSubscribed) return;
+            console.log(`🔥 [Firestore Sync] Connected to Cloud Firestore! Loaded ${firestoreItems.length} item(s).`);
+            setItems(firestoreItems);
+            setFirebaseConnected(true);
+            setIsLoading(false);
+          },
+          (err) => {
+            if (!isSubscribed) return;
+            console.error(`❌ [Firestore Sync Error] Could not connect to Cloud Firestore (${err.message}).`);
+            setFirebaseConnected(false);
+            setIsLoading(false);
+          }
+        );
+
+        unsubscribeSales = subscribeToSales((firestoreSales) => {
+          if (!isSubscribed) return;
+          setSales(firestoreSales);
+        });
+
+        unsubscribeBins = subscribeToBins((firestoreBins) => {
+          if (!isSubscribed) return;
+          setBins(firestoreBins);
+        });
+      })
+      .catch((err) => {
         if (!isSubscribed) return;
-        console.warn(`⚠️ [Firestore Sync Warning] Could not connect to Cloud Firestore (${err.message}). Using local storage fallback.`);
+        console.error(`❌ [Firebase Auth Error] Could not authenticate anonymously (${err.message}).`);
         setFirebaseConnected(false);
         setIsLoading(false);
-      }
-    );
-
-    const unsubscribeSales = subscribeToSales((firestoreSales) => {
-      if (!isSubscribed) return;
-      if (firestoreSales && firestoreSales.length > 0) {
-        setSales(firestoreSales);
-      }
-    });
-
-    const unsubscribeBins = subscribeToBins((firestoreBins) => {
-      if (!isSubscribed) return;
-      if (firestoreBins && firestoreBins.length > 0) {
-        setBins(firestoreBins);
-      }
-    });
+      });
 
     return () => {
       isSubscribed = false;
-      unsubscribeItems();
-      unsubscribeSales();
-      unsubscribeBins();
+      if (unsubscribeItems) unsubscribeItems();
+      if (unsubscribeSales) unsubscribeSales();
+      if (unsubscribeBins) unsubscribeBins();
     };
   }, []);
-
-  // Sync to IndexedDB + safe quota-protected localStorage
-  useEffect(() => {
-    setStorageItem('petaca_inventory_items', items);
-  }, [items]);
-
-  useEffect(() => {
-    setStorageItem('petaca_inventory_sales', sales);
-  }, [sales]);
-
-  useEffect(() => {
-    setStorageItem('petaca_inventory_bins', bins);
-  }, [bins]);
 
   // Dark Mode side effect
   useEffect(() => {
@@ -199,44 +154,33 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, [items, sales]);
 
-  // Add New Item to Cloud Firestore & Local State
+  // Add New Item to Cloud Firestore
   const addItem = (newItemData: Omit<InventoryItem, 'id'>) => {
     const newItem: InventoryItem = {
       ...newItemData,
       id: `item-${Date.now()}`
     };
-    // Optimistic UI update
-    setItems(prev => [newItem, ...prev]);
 
-    // Persist to Cloud Firestore
     addItemToFirestore(newItem).catch(err => {
       console.error('Failed to add item to Firestore:', err);
     });
   };
 
-  // Update Item in Cloud Firestore & Local State
+  // Update Item in Cloud Firestore
   const updateItem = (updated: InventoryItem) => {
-    // Optimistic UI update
-    setItems(prev => prev.map(item => item.id === updated.id ? updated : item));
-
-    // Persist to Cloud Firestore
     updateItemInFirestore(updated).catch(err => {
       console.error('Failed to update item in Firestore:', err);
     });
   };
 
-  // Delete Item from Cloud Firestore & Local State
+  // Delete Item from Cloud Firestore
   const deleteItem = (id: string) => {
-    // Optimistic UI update
-    setItems(prev => prev.filter(item => item.id !== id));
-
-    // Persist to Cloud Firestore
     deleteItemFromFirestore(id).catch(err => {
       console.error('Failed to delete item from Firestore:', err);
     });
   };
 
-  // Mark Item as Sold
+  // Mark Item as Sold in Cloud Firestore
   const markAsSold = (
     itemId: string, 
     salePrice: number, 
@@ -267,20 +211,47 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       locationBin: target.locationBin
     };
 
-    setSales(prev => [newSale, ...prev]);
     addSaleToFirestore(newSale).catch(err => console.error('Failed to add sale to Firestore:', err));
-
     updateItem({ ...target, status: 'Sold' });
   };
 
-  // Add Storage Bin to Cloud Firestore & Local State
+  // Add Storage Bin to Cloud Firestore
   const addBin = (newBinData: Omit<StorageBin, 'id'>) => {
     const newBin: StorageBin = {
       ...newBinData,
       id: `bin-${Date.now()}`
     };
-    setBins(prev => [...prev, newBin]);
     addBinToFirestore(newBin).catch(err => console.error('Failed to add bin to Firestore:', err));
+  };
+
+  // Sync Local Data (IndexedDB / localStorage) to Cloud Firestore
+  const syncLocalDataToCloud = async () => {
+    const storedItems = await getStorageItem<InventoryItem[]>('petaca_inventory_items', []);
+    const storedSales = await getStorageItem<SaleRecord[]>('petaca_inventory_sales', []);
+    const storedBins = await getStorageItem<StorageBin[]>('petaca_inventory_bins', []);
+
+    // Filter out hardcoded mock records from initialData.ts
+    const validLocalItems = (storedItems || []).filter(
+      item => item && item.id && item.id !== 'item-101'
+    );
+    const validLocalSales = (storedSales || []).filter(
+      sale => sale && sale.id && sale.id !== 'sale-201'
+    );
+    const validLocalBins = (storedBins || []).filter(
+      bin => bin && bin.id
+    );
+
+    await Promise.all([
+      ...validLocalItems.map(item => addItemToFirestore(item)),
+      ...validLocalSales.map(sale => addSaleToFirestore(sale)),
+      ...validLocalBins.map(bin => addBinToFirestore(bin))
+    ]);
+
+    return {
+      itemsSynced: validLocalItems.length,
+      salesSynced: validLocalSales.length,
+      binsSynced: validLocalBins.length
+    };
   };
 
   return (
@@ -306,7 +277,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateItem,
         deleteItem,
         markAsSold,
-        addBin
+        addBin,
+        syncLocalDataToCloud
       }}
     >
       {children}

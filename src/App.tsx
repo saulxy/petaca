@@ -76,12 +76,12 @@ export const App: React.FC = () => (
 
             <IonTabButton tab="bins" href="/bins">
               <IonIcon icon={locationOutline} />
-              <IonLabel>Storage Bins</IonLabel>
+              <IonLabel>Bins</IonLabel>
             </IonTabButton>
 
             <IonTabButton tab="sales" href="/sales">
               <IonIcon icon={cashOutline} />
-              <IonLabel>Sales Log</IonLabel>
+              <IonLabel>Sales</IonLabel>
             </IonTabButton>
           </IonTabBar>
         </IonTabs>
